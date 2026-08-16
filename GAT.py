@@ -223,13 +223,13 @@ class ScaleGATEncoder(nn.Module):
         B, n = x.size(0), self.n_attrs
 
         # ── Step 1：Tokenizer → 初始节点特征 ──────
-        T0 = self.tokenizer(x)                        # [B, n, d]
+        t0 = self.tokenizer(x)                        # [B, n, d]
 
         # ── Step 2：展平为 PyG 所需的节点矩阵 ──────
         # PyG 的 GATv2Conv 期望 [num_nodes_total, d]
         # 这里把 B 个患者的图拼成一张大图（batch graph）
         # 每个患者的节点索引偏移 i*n
-        T0_flat = T0.reshape(B * n, self.d_model)      # [B*n, d]
+        T0_flat = t0.reshape(B * n, self.d_model)      # [B*n, d]
 
         # 构建 batch 级 edge_index（每个患者复制一份图，偏移节点索引）
         offsets    = torch.arange(B, device=x.device) * n  # [B]
@@ -245,7 +245,7 @@ class ScaleGATEncoder(nn.Module):
         TL      = TL_flat.reshape(B, n, self.d_model)        # [B, n, d]
 
         # ── Step 4：残差拼接（参考 MIRNet 预测头）──
-        hat_T = torch.cat([T0, TL], dim=-1)            # [B, n, 2d]
+        hat_T = torch.cat([t0, TL], dim=-1)            # [B, n, 2d]
 
         # ── Step 5：可信度估计 ─────────────────────
         reliability = self.rel_head(hat_T)             # [B, n]
